@@ -1,14 +1,52 @@
-import React, { useState, version } from "react";
+import React, { useEffect, useState } from "react";
 
-function PizzaForm({ pizzaTopping, pizzaSize, pizzaVegetarian }) {
-  const [topping, setTopping] = useState(pizzaTopping);
-  const [size, setSize] = useState(pizzaSize);
-  const [vegetarian, setVegetarian] = useState(pizzaVegetarian);
+function PizzaForm({ pizza, onSubmit }) {
+  const [topping, setTopping] = useState("");
+  const [size, setSize] = useState("");
+  const [vegetarian, setVegetarian] = useState(null);
 
   console.log(topping, size, vegetarian);
 
+  // update state on re-render if pizza changes
+  useEffect(() => {
+    setTopping(pizza[0].topping);
+    setSize(pizza[0].size);
+    setVegetarian(pizza[0].vegetarian);
+  }, pizza)
+
+  // PATCH when the user submits the form
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    const changedPizza = {
+      id: pizza[0].id,
+      size: size,
+      topping: topping,
+      vegetarian: vegetarian
+    };
+
+    fetch(`http://localhost:3001/pizzas/${pizza[0].id}`, {
+      method: 'PATCH',
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(changedPizza)
+    })
+      .then(r => r.json())
+      .then((updatedPizza) => onSubmit(updatedPizza));
+  }
+
+  function handleVegetarianChange(e) {
+    if (e.target.value === "Not Vegetarian") {
+      setVegetarian(false);
+    }
+    else {
+      setVegetarian(true);
+    }
+  }
+
   return (
-    <form onSubmit={null /*handle that submit*/}>
+    <form onSubmit={handleSubmit}>
       <div className="form-row">
         <div className="col-5">
           <input
@@ -16,10 +54,12 @@ function PizzaForm({ pizzaTopping, pizzaSize, pizzaVegetarian }) {
             type="text"
             name="topping"
             placeholder="Pizza Topping"
+            value={topping}
+            onChange={(e) => setTopping(e.target.value)}
           />
         </div>
         <div className="col">
-          <select className="form-control" name="size">
+          <select className="form-control" name="size" value={size} onChange={(e) => setSize(e.target.value)}>
             <option value="Small">Small</option>
             <option value="Medium">Medium</option>
             <option value="Large">Large</option>
@@ -32,6 +72,8 @@ function PizzaForm({ pizzaTopping, pizzaSize, pizzaVegetarian }) {
               type="radio"
               name="vegetarian"
               value="Vegetarian"
+              checked={vegetarian === true? true : false}
+              onChange={handleVegetarianChange}
             />
             <label className="form-check-label">Vegetarian</label>
           </div>
@@ -41,6 +83,8 @@ function PizzaForm({ pizzaTopping, pizzaSize, pizzaVegetarian }) {
               type="radio"
               name="vegetarian"
               value="Not Vegetarian"
+              checked={vegetarian === false? true : false}
+              onChange={handleVegetarianChange}
             />
             <label className="form-check-label">Not Vegetarian</label>
           </div>
